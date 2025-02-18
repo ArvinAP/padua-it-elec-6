@@ -13,9 +13,10 @@ interface Post {
 })
 export class AppComponent {
   title = 'padua';
-  storedPosts: Post[] = [];
-  onPostAdded(post: any): void {
-    this.storedPosts.push(post);
+  // storedPosts: Post[] = [];
+  // onPostAdded(post: any): void {
+  //   this.storedPosts.push(post);
 
-    }  }
+  //   }  
+}
 
