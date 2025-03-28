@@ -1,7 +1,7 @@
-mat-card{
+mat-card {
   margin: 1rem auto;
   width: 80%;
- 
+  max-width: 800px;
 }
 
 mat-form-field {
@@ -10,8 +10,45 @@ mat-form-field {
   margin: 1rem 0;
 }
 
+form {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
 button {
-  display: block;
-  width: 30%;
+  margin: 1rem 0;
+  width: 200px;
+}
+
+mat-spinner {
   margin: 1rem auto;
+}
+
+input[type="file"] {
+  visibility: hidden;
+}
+
+.image-preview {
+  height: 5rem;
+  margin: 1rem 0;
+}
+
+.image-preview img {
+  height: 100%;
+}
+
+.image-upload {
+  margin: 1rem 0;
+  width: 100%;
+  text-align: center;
+}
+
+.full-width {
+  width: 100%;
+}
+
+.form-container {
+  width: 100%;
+  padding: 1rem;
 }

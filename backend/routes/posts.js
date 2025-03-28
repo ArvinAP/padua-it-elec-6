@@ -1,65 +1,116 @@
 const express = require("express");
 const router = express.Router();
 const PostModel = require("../models/post");
+const multer = require("multer");
 
-router.post("/api/posts", async (req, res) => {  
+const MIME_TYPE_MAP = {
+  'image/png': 'png',
+  'image/jpeg': 'jpg',
+  'image/jpg': 'jpg'
+};
+
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const isValid = MIME_TYPE_MAP[file.mimetype];
+    let error = new Error("Invalid mime type");
+    if (isValid) {
+      error = null;
+    }
+    cb(error, "backend/images");
+  },
+  filename: (req, file, cb) => {
+    const name = file.originalname.toLowerCase().split(' ').join('-');
+    const ext = MIME_TYPE_MAP[file.mimetype];
+    cb(null, name + '-' + Date.now() + '.' + ext);
+  }
+});
+
+const upload = multer({ storage: storage }).single("image");
+
+router.post("/", upload, async (req, res) => {  
     try {
+        const url = req.protocol + '://' + req.get("host");
         const post = new PostModel({  
             title: req.body.title,  
-            content: req.body.content  
+            content: req.body.content,
+            imagePath: url + "/images/" + req.file.filename
         });
 
         const result = await post.save();  
         res.status(201).json({  
             message: "Post added successfully",  
-            postId: result._id  
+            post: {
+                ...result.toObject(),
+                id: result._id
+            }
         });
     } catch (error) {
-        res.status(500).json({ message: "Creating post failed!", error: error.message });
+        res.status(500).json({ 
+            message: "Creating post failed!", 
+            error: error.message 
+        });
     }
 });  
 
-router.put("/api/posts/:id", async (req, res) => {  
-    try {
-        const result = await PostModel.updateOne(
-            { _id: req.params.id },
-            { title: req.body.title, content: req.body.content }
-        );
-
-        if (result.matchedCount === 0) {
-            return res.status(404).json({ message: "Post not found!" });
-        }
-
-        res.status(200).json({ message: "Update Successful!" });
-    } catch (error) {
-        res.status(500).json({ message: "Updating post failed!", error: error.message });
+router.put("/:id", upload, (req, res, next) => {
+    let imagePath = req.body.imagePath;
+    if (req.file) {
+        const url = req.protocol + '://' + req.get("host");
+        imagePath = url + "/images/" + req.file.filename;
     }
+    
+    const post = new PostModel({
+        _id: req.params.id,
+        title: req.body.title,
+        content: req.body.content,
+        imagePath: imagePath
+    });
+
+    PostModel.updateOne({ _id: req.params.id }, post)
+        .then(result => {
+            res.status(200).json({ 
+                message: "Update successful!",
+                post: {
+                    ...post.toObject(),
+                    id: req.params.id
+                }
+            });
+        })
+        .catch(error => {
+            res.status(500).json({
+                message: "Couldn't update post!"
+            });
+        });
 });  
 
-router.get("/api/posts", async (req, res) => {  
+router.get("/", async (req, res) => {  
     try {
-        const documents = await PostModel.find();
+        const posts = await PostModel.find();
         res.status(200).json({  
-            message: "Posts fetched successfully",  
-            posts: documents  
+            message: "Posts fetched successfully!",  
+            posts: posts  
         });
     } catch (error) {
         res.status(500).json({ message: "Fetching posts failed!", error: error.message });
     }
 });  
-router.get("/api/posts/:id", async (req, res) => {  
-    try {
-        const post = await PostModel.findById(req.params.id);
-        if (!post) {
-            return res.status(404).json({ message: "Post not found!" });
-        }
-        res.status(200).json(post);
-    } catch (error) {
-        res.status(500).json({ message: "Fetching post failed!", error: error.message });
+
+router.get("/:id", (req, res, next) => {
+  PostModel.findById(req.params.id).then(post => {
+    if (post) {
+      res.status(200).json({
+        id: post._id,
+        title: post.title,
+        content: post.content,
+        imagePath: post.imagePath
+      });
+    } else {
+      res.status(404).json({ message: "Post not found!" });
     }
+  });
 });  
 
-router.delete("/api/posts/:id", async (req, res) => {  
+router.delete("/:id", async (req, res) => {  
     try {
         const result = await PostModel.deleteOne({ _id: req.params.id });
 
