@@ -7,34 +7,41 @@ import { map, catchError } from "rxjs/operators";
 
 @Injectable({ providedIn: 'root' })
 export class PostsService {
-    posts: Post[] = [];
-    private postsUpdated = new Subject<Post[]>();
+    private posts: Post[] = [];
+    private postsUpdated = new Subject<{ posts: Post[], totalPosts: number }>();
 
     constructor(private http: HttpClient, private router: Router) {}
 
-    getPosts() {
-        this.http.get<{ message: string, posts: any }>('http://localhost:3000/api/posts')
-            .pipe(
-                map((postData) => {
-                    return postData.posts.map((post: any) => ({
+    getPosts(pagesize: number, currentpage: number) {
+        const queryParams = `?pagesize=${pagesize}&currentpage=${currentpage}`;  
+        this.http.get<{ message: string, posts: any, totalPosts: number }>(
+            'http://localhost:3000/api/posts' + queryParams
+        ).pipe(
+            map((postData) => {
+                return {
+                    posts: postData.posts.map((post: any) => ({
                         id: post._id,
                         title: post.title,
                         content: post.content,
                         imagePath: post.imagePath
-                    }));
-                }),
-                catchError(error => {
-                    console.error("Fetching posts failed!", error);
-                    return throwError(error);
-                })
-            )
-            .subscribe((transformedPosts) => {
-                this.posts = transformedPosts;
-                this.postsUpdated.next([...this.posts]);
+                    })),
+                    totalPosts: postData.totalPosts
+                };
+            }),
+            catchError(error => {
+                console.error("Error fetching posts:", error);
+                return throwError(() => error);
+            })
+        ).subscribe((transformedData) => {
+            this.posts = transformedData.posts;
+            this.postsUpdated.next({
+                posts: [...this.posts], 
+                totalPosts: transformedData.totalPosts
             });
+        });
     }
 
-    getPostUpdatedListener() {
+    getPostUpdatedListener(): Observable<{ posts: Post[], totalPosts: number }> {
         return this.postsUpdated.asObservable();
     }
 
@@ -42,13 +49,15 @@ export class PostsService {
         return this.http.get<{ _id: string; title: string; content: string; imagePath: string }>(
             `http://localhost:3000/api/posts/${id}`
         ).pipe(
-            map(postData => {
-                return {
-                    id: postData._id,
-                    title: postData.title,
-                    content: postData.content,
-                    imagePath: postData.imagePath
-                };
+            map(postData => ({
+                id: postData._id,
+                title: postData.title,
+                content: postData.content,
+                imagePath: postData.imagePath
+            })),
+            catchError(error => {
+                console.error("Error fetching post:", error);
+                return throwError(() => error);
             })
         );
     }
@@ -73,60 +82,55 @@ export class PostsService {
                         imagePath: responseData.post.imagePath
                     };
                     this.posts.push(post);
-                    this.postsUpdated.next([...this.posts]);
+                    this.postsUpdated.next({ posts: [...this.posts], totalPosts: this.posts.length });
                     this.router.navigate(['/']);
-                }
+                },
+                error: (err) => console.error("Error in addPost:", err)
             });
     }
-    
 
     updatePost(id: string, title: string, content: string, image: File | string) {
         let postData: FormData | Post;
         
         if (typeof image === 'object') {
-            // If a new file is selected
             postData = new FormData();
             postData.append('id', id);
             postData.append('title', title);
             postData.append('content', content);
             postData.append('image', image, title);
         } else {
-            // If no new file is selected
-            postData = {
-                id: id,
-                title: title,
-                content: content,
-                imagePath: image
-            };
+            postData = { id, title, content, imagePath: image };
         }
 
         this.http
-            .put<{ message: string, post: Post }>(`http://localhost:3000/api/posts/${id}`, postData)
+            .put<{ message: string, post?: Post }>(`http://localhost:3000/api/posts/${id}`, postData)
             .subscribe({
                 next: (response) => {
-                    const updatedPosts = [...this.posts];
-                    const oldPostIndex = updatedPosts.findIndex(p => p.id === id);
-                    const post: Post = {
-                        id: id,
-                        title: title,
-                        content: content,
-                        imagePath: response.post.imagePath
-                    };
-                    updatedPosts[oldPostIndex] = post;
-                    this.posts = updatedPosts;
-                    this.postsUpdated.next([...this.posts]);
+                    const oldPostIndex = this.posts.findIndex(p => p.id === id);
+                    if (oldPostIndex !== -1) {
+                        this.posts[oldPostIndex] = {
+                            id,
+                            title,
+                            content,
+                            imagePath: response.post?.imagePath || this.posts[oldPostIndex].imagePath
+                        };
+                        this.postsUpdated.next({ posts: [...this.posts], totalPosts: this.posts.length });
+                    }
                     this.router.navigate(['/']);
-                }
+                },
+                error: (err) => console.error("Error in updatePost:", err)
             });
     }
 
     deletePost(postId: string) {
         this.http.delete(`http://localhost:3000/api/posts/${postId}`)
-            .subscribe(() => {
-                console.log('Deleted');
-                this.posts = this.posts.filter(post => post.id !== postId);
-                this.postsUpdated.next([...this.posts]);
-                this.router.navigate(["/"]);
+            .subscribe({
+                next: () => {
+                    this.posts = this.posts.filter(post => post.id !== postId);
+                    this.postsUpdated.next({ posts: [...this.posts], totalPosts: this.posts.length });
+                    this.router.navigate(["/"]);
+                },
+                error: (err) => console.error("Error in deletePost:", err)
             });
     }
 }

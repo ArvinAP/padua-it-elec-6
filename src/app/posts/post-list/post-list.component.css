@@ -46,3 +46,7 @@ mat-action-row {
   justify-content: flex-end;
   gap: 1rem;
 }
+
+mat-paginator {
+  margin-top: 1rem;
+}
