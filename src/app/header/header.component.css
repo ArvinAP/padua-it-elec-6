@@ -1,14 +1,16 @@
-a{
-    text-decoration: none;
-    color: white;
+.spacer {
+  flex: 1 1 auto;
 }
 
-ul{
-    list-style: none;
-    padding: 0;
-    margin: 0;
+.nav-list {
+  list-style: none;
+  display: flex;
+  gap: 1rem;
+  margin: 0;
+  padding: 0;
+  align-items: center;
 }
 
-.spacer{
-    flex: 1 1 auto;
+.nav-list li {
+  display: inline-block;
 }
