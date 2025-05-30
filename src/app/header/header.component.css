@@ -1,16 +1,49 @@
+mat-toolbar {
+  padding: 0 5%;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  height: 64px;
+  margin-bottom: 2rem;
+}
+
 .spacer {
   flex: 1 1 auto;
 }
 
-.nav-list {
+ul {
   list-style: none;
-  display: flex;
-  gap: 1rem;
   margin: 0;
   padding: 0;
-  align-items: center;
+  display: flex;
 }
 
-.nav-list li {
-  display: inline-block;
+a {
+  text-decoration: none;
+  color: white;
+  font-weight: 500;
+  transition: all 0.3s;
+  padding: 6px 16px;
+  border-radius: 20px;
+}
+
+a:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: #ffd740;
+}
+
+.mat-accent {
+  color: #ffd740 !important;
+}
+
+li {
+  margin-left: 1rem;
+}
+
+/* Optional: Add hover effect for non-active links */
+a:hover:not(.mat-accent) {
+  opacity: 0.8;
 }

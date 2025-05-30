@@ -1,22 +1,27 @@
-// src/app/authentication/auth-interceptor.ts
-
 import { Injectable } from '@angular/core';
-import { HttpInterceptor, HttpRequest, HttpHandler } from '@angular/common/http';
+import {
+  HttpRequest,
+  HttpHandler,
+  HttpEvent,
+  HttpInterceptor
+} from '@angular/common/http';
+import { Observable } from 'rxjs';
 import { AuthService } from './auth.service';
 
 @Injectable()
 export class AuthInterceptor implements HttpInterceptor {
   constructor(private authService: AuthService) {}
 
-  intercept(req: HttpRequest<any>, next: HttpHandler) {
-    const authToken = this.authService.getToken();  // Get the JWT token from the AuthService
-    if (authToken) {
-      // Clone the request and add the Authorization header with the token
-      const clonedReq = req.clone({
-        headers: req.headers.set('Authorization', 'Bearer ' + authToken)
+  intercept(request: HttpRequest<unknown>, next: HttpHandler): Observable<HttpEvent<unknown>> {
+    const token = this.authService.getToken();
+    
+    if (token) {
+      const authRequest = request.clone({
+        headers: request.headers.set('Authorization', 'Bearer ' + token)
       });
-      return next.handle(clonedReq);  // Pass the cloned request to the next handler
+      return next.handle(authRequest);
     }
-    return next.handle(req);  // No token, just proceed with the original request
+    
+    return next.handle(request);
   }
-}
+} 
