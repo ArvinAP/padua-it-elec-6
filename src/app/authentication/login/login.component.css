@@ -1,24 +1,41 @@
-/* src/app/authentication/login/login.component.css */
+.login-card {
+  max-width: 400px;
+  margin: 2rem auto;
+  padding: 1rem;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  margin-top: 10rem;
+}
 
-.login-container {
-    display: flex;
-    justify-content: center;
-    margin-top: 80px;
-  }
-  
-  mat-card {
-    width: 400px;
-    padding: 20px;
-  }
-  
-  .full-width {
-    width: 100%;
-    margin-bottom: 20px;
-  }
-  
-  .spinner-container {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 80vh;
-  }
+mat-card-header {
+  margin-bottom: 1.5rem;
+  justify-content: center;
+}
+
+mat-card-title {
+  font-size: 1.5rem;
+}
+
+mat-form-field {
+  width: 100%;
+  margin-bottom: 1rem;
+}
+
+.button-container {
+  display: flex;
+  justify-content: center;
+  margin-top: 1.5rem;
+}
+
+button {
+  min-width: 120px;
+}
+
+mat-spinner {
+  margin: auto;
+}
+
+form {
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+} 
